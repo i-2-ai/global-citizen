@@ -1,0 +1,44 @@
+FROM openjdk:17-jdk-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Gradle
+RUN wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip \
+    && unzip gradle-8.4-bin.zip \
+    && rm gradle-8.4-bin.zip \
+    && mv gradle-8.4 /opt/gradle
+
+# Add Gradle to PATH
+ENV PATH="/opt/gradle/bin:${PATH}"
+
+# Copy build files
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
+COPY gradlew ./
+
+# Make gradlew executable
+RUN chmod +x gradlew
+
+# Copy source code
+COPY src ./src
+
+# Create test results directory
+RUN mkdir -p test-results
+
+# Set environment variables
+ENV GRADLE_OPTS="-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+# Default command
+CMD ["./gradlew", "test", "--no-daemon"] 

@@ -1,0 +1,197 @@
+version: '3.8'
+
+services:
+  # Central Authority Service
+  central-authority-test:
+    build:
+      context: ../central-authority
+      dockerfile: Dockerfile
+    container_name: global-citizen-central-authority-test
+    environment:
+      - SPRING_PROFILES_ACTIVE=test
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-central-test:5432/global_citizen_central
+      - SPRING_DATASOURCE_USERNAME=globalcitizen
+      - SPRING_DATASOURCE_PASSWORD=globalcitizen123
+      - SERVER_PORT=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-central-test
+    networks:
+      - global-citizen-test
+
+  # Country Service
+  country-service-test:
+    build:
+      context: ../country-service
+      dockerfile: Dockerfile
+    container_name: global-citizen-country-service-test
+    environment:
+      - SPRING_PROFILES_ACTIVE=test
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-country-test:5432/global_citizen_country
+      - SPRING_DATASOURCE_USERNAME=globalcitizen
+      - SPRING_DATASOURCE_PASSWORD=globalcitizen123
+      - SERVER_PORT=8081
+      - CENTRAL_AUTHORITY_URL=http://central-authority-test:8080
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres-country-test
+      - central-authority-test
+    networks:
+      - global-citizen-test
+
+  # Embassy Service
+  embassy-service-test:
+    build:
+      context: ../embassy-service
+      dockerfile: Dockerfile
+    container_name: global-citizen-embassy-service-test
+    environment:
+      - SPRING_PROFILES_ACTIVE=test
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-embassy-test:5432/global_citizen_embassy
+      - SPRING_DATASOURCE_USERNAME=globalcitizen
+      - SPRING_DATASOURCE_PASSWORD=globalcitizen123
+      - SERVER_PORT=8082
+      - CENTRAL_AUTHORITY_URL=http://central-authority-test:8080
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres-embassy-test
+      - central-authority-test
+    networks:
+      - global-citizen-test
+
+  # Immigration Service
+  immigration-service-test:
+    build:
+      context: ../immigration-service
+      dockerfile: Dockerfile
+    container_name: global-citizen-immigration-service-test
+    environment:
+      - SPRING_PROFILES_ACTIVE=test
+      - SERVER_PORT=8083
+      - CENTRAL_AUTHORITY_URL=http://central-authority-test:8080
+      - COUNTRY_SERVICE_URL=http://country-service-test:8081
+      - EMBASSY_SERVICE_URL=http://embassy-service-test:8082
+    ports:
+      - "8083:8083"
+    depends_on:
+      - central-authority-test
+      - country-service-test
+      - embassy-service-test
+    networks:
+      - global-citizen-test
+
+  # UI Service
+  ui-service-test:
+    build:
+      context: ../ui
+      dockerfile: Dockerfile
+    container_name: global-citizen-ui-service-test
+    environment:
+      - SPRING_PROFILES_ACTIVE=test
+      - SERVER_PORT=8084
+      - CENTRAL_AUTHORITY_URL=http://central-authority-test:8080
+      - COUNTRY_SERVICE_URL=http://country-service-test:8081
+      - EMBASSY_SERVICE_URL=http://embassy-service-test:8082
+      - IMMIGRATION_SERVICE_URL=http://immigration-service-test:8083
+    ports:
+      - "8084:8084"
+    depends_on:
+      - central-authority-test
+      - country-service-test
+      - embassy-service-test
+      - immigration-service-test
+    networks:
+      - global-citizen-test
+
+  # PostgreSQL - Central Authority
+  postgres-central-test:
+    image: postgres:15-alpine
+    container_name: global-citizen-postgres-central-test
+    environment:
+      - POSTGRES_DB=global_citizen_central
+      - POSTGRES_USER=globalcitizen
+      - POSTGRES_PASSWORD=globalcitizen123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-central-test-data:/var/lib/postgresql/data
+      - ../init-scripts/central-authority.sql:/docker-entrypoint-initdb.d/01-init.sql
+    networks:
+      - global-citizen-test
+
+  # PostgreSQL - Country Service
+  postgres-country-test:
+    image: postgres:15-alpine
+    container_name: global-citizen-postgres-country-test
+    environment:
+      - POSTGRES_DB=global_citizen_country
+      - POSTGRES_USER=globalcitizen
+      - POSTGRES_PASSWORD=globalcitizen123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-country-test-data:/var/lib/postgresql/data
+      - ../init-scripts/country-service.sql:/docker-entrypoint-initdb.d/01-init.sql
+    networks:
+      - global-citizen-test
+
+  # PostgreSQL - Embassy Service
+  postgres-embassy-test:
+    image: postgres:15-alpine
+    container_name: global-citizen-postgres-embassy-test
+    environment:
+      - POSTGRES_DB=global_citizen_embassy
+      - POSTGRES_USER=globalcitizen
+      - POSTGRES_PASSWORD=globalcitizen123
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-embassy-test-data:/var/lib/postgresql/data
+      - ../init-scripts/embassy-service.sql:/docker-entrypoint-initdb.d/01-init.sql
+    networks:
+      - global-citizen-test
+
+  # Redis for caching
+  redis-test:
+    image: redis:7-alpine
+    container_name: global-citizen-redis-test
+    ports:
+      - "6379:6379"
+    networks:
+      - global-citizen-test
+
+  # Test Runner
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: global-citizen-test-runner
+    environment:
+      - CENTRAL_AUTHORITY_URL=http://central-authority-test:8080
+      - COUNTRY_SERVICE_URL=http://country-service-test:8081
+      - EMBASSY_SERVICE_URL=http://embassy-service-test:8082
+      - IMMIGRATION_SERVICE_URL=http://immigration-service-test:8083
+      - UI_SERVICE_URL=http://ui-service-test:8084
+    depends_on:
+      - central-authority-test
+      - country-service-test
+      - embassy-service-test
+      - immigration-service-test
+      - ui-service-test
+    volumes:
+      - ./test-results:/app/test-results
+    networks:
+      - global-citizen-test
+    command: ["./gradlew", "test", "--no-daemon"]
+
+volumes:
+  postgres-central-test-data:
+  postgres-country-test-data:
+  postgres-embassy-test-data:
+
+networks:
+  global-citizen-test:
+    driver: bridge 
