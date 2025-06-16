@@ -37,7 +37,7 @@ public class QuantumResistantCrypto {
      * Generate a quantum-resistant key pair
      * @return KeyPair containing public and private keys
      */
-    public KeyPair generateKeyPair() throws NoSuchAlgorithmException {
+    public KeyPair generateKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException {
         log.info("Generating quantum-resistant key pair using {}", KEY_PAIR_ALGORITHM);
         
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(KEY_PAIR_ALGORITHM, "BC");

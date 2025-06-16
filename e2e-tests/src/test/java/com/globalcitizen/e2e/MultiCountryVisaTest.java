@@ -326,7 +326,7 @@ public class MultiCountryVisaTest {
         );
         
         ResponseEntity<Map> response = TestUtils.retryWithBackoff(() -> 
-                TestUtils.post(IMMIGRATION_SERVICE_URL + "/api/entry-log/exit", exitRequest, Map.class)
+                TestUtils.post(TestUtils.IMMIGRATION_SERVICE_URL + "/api/entry-log/exit", exitRequest, Map.class)
         );
         
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();

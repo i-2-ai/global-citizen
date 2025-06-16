@@ -27,11 +27,11 @@ public class TestUtils {
     private static final RestTemplate restTemplate = new RestTemplate();
     
     // Service URLs
-    private static final String CENTRAL_AUTHORITY_URL = System.getProperty("CENTRAL_AUTHORITY_URL", "http://localhost:8080");
-    private static final String COUNTRY_SERVICE_URL = System.getProperty("COUNTRY_SERVICE_URL", "http://localhost:8081");
-    private static final String EMBASSY_SERVICE_URL = System.getProperty("EMBASSY_SERVICE_URL", "http://localhost:8082");
-    private static final String IMMIGRATION_SERVICE_URL = System.getProperty("IMMIGRATION_SERVICE_URL", "http://localhost:8083");
-    private static final String UI_SERVICE_URL = System.getProperty("UI_SERVICE_URL", "http://localhost:8084");
+    public static final String CENTRAL_AUTHORITY_URL = System.getProperty("CENTRAL_AUTHORITY_URL", "http://localhost:8080");
+    public static final String COUNTRY_SERVICE_URL = System.getProperty("COUNTRY_SERVICE_URL", "http://localhost:8081");
+    public static final String EMBASSY_SERVICE_URL = System.getProperty("EMBASSY_SERVICE_URL", "http://localhost:8082");
+    public static final String IMMIGRATION_SERVICE_URL = System.getProperty("IMMIGRATION_SERVICE_URL", "http://localhost:8083");
+    public static final String UI_SERVICE_URL = System.getProperty("UI_SERVICE_URL", "http://localhost:8084");
     
     // Test configuration
     private static final int DEFAULT_TIMEOUT_SECONDS = 30;

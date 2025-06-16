@@ -26,6 +26,12 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CompleteTravelJourneyTest {
     
+    // Service URLs
+    private static final String CENTRAL_AUTHORITY_URL = System.getProperty("CENTRAL_AUTHORITY_URL", "http://localhost:8080");
+    private static final String COUNTRY_SERVICE_URL = System.getProperty("COUNTRY_SERVICE_URL", "http://localhost:8081");
+    private static final String EMBASSY_SERVICE_URL = System.getProperty("EMBASSY_SERVICE_URL", "http://localhost:8082");
+    private static final String IMMIGRATION_SERVICE_URL = System.getProperty("IMMIGRATION_SERVICE_URL", "http://localhost:8083");
+    
     private String motherKeyId;
     private String globalKeyId;
     private String countryCertificateId;
@@ -385,25 +391,25 @@ public class CompleteTravelJourneyTest {
         
         // Test Central Authority health
         ResponseEntity<Map> centralAuthResponse = TestUtils.retryWithBackoff(() -> 
-                TestUtils.get(CENTRAL_AUTHORITY_URL + "/actuator/health", Map.class)
+                TestUtils.get(TestUtils.CENTRAL_AUTHORITY_URL + "/actuator/health", Map.class)
         );
         assertThat(centralAuthResponse.getStatusCode().is2xxSuccessful()).isTrue();
         
         // Test Country Service health
         ResponseEntity<Map> countryResponse = TestUtils.retryWithBackoff(() -> 
-                TestUtils.get(COUNTRY_SERVICE_URL + "/actuator/health", Map.class)
+                TestUtils.get(TestUtils.COUNTRY_SERVICE_URL + "/actuator/health", Map.class)
         );
         assertThat(countryResponse.getStatusCode().is2xxSuccessful()).isTrue();
         
         // Test Embassy Service health
         ResponseEntity<Map> embassyResponse = TestUtils.retryWithBackoff(() -> 
-                TestUtils.get(EMBASSY_SERVICE_URL + "/actuator/health", Map.class)
+                TestUtils.get(TestUtils.EMBASSY_SERVICE_URL + "/actuator/health", Map.class)
         );
         assertThat(embassyResponse.getStatusCode().is2xxSuccessful()).isTrue();
         
         // Test Immigration Service health
         ResponseEntity<Map> immigrationResponse = TestUtils.retryWithBackoff(() -> 
-                TestUtils.get(IMMIGRATION_SERVICE_URL + "/actuator/health", Map.class)
+                TestUtils.get(TestUtils.IMMIGRATION_SERVICE_URL + "/actuator/health", Map.class)
         );
         assertThat(immigrationResponse.getStatusCode().is2xxSuccessful()).isTrue();
         
