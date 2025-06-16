@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Immigration Dashboard - Global Citizen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shield-alt"></i> Global Citizen - Immigration Control
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/immigration">Dashboard</a>
+                <a class="nav-link" href="/immigration/verify/passport">Verify Passport</a>
+                <a class="nav-link" href="/immigration/verify/visa">Verify Visa</a>
+                <a class="nav-link" href="/immigration/verify/qr">QR Scanner</a>
+                <a class="nav-link" href="/immigration/public-keys">Public Keys</a>
+                <a class="nav-link" href="/immigration/entry-log">Entry Log</a>
+                <a class="nav-link" href="/immigration/alerts">Alerts</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="fas fa-shield-alt"></i> Immigration Control Dashboard
+                </h1>
+                
+                <!-- Alert Messages -->
+                <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i>
+                    <span th:text="${message}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-bolt"></i> Quick Verification Tools</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <a href="/immigration/verify/passport" class="btn btn-primary w-100">
+                                    <i class="fas fa-passport"></i> Verify Passport
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="/immigration/verify/visa" class="btn btn-success w-100">
+                                    <i class="fas fa-stamp"></i> Verify Visa
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="/immigration/verify/qr" class="btn btn-info w-100">
+                                    <i class="fas fa-qrcode"></i> QR Scanner
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="/immigration/public-keys" class="btn btn-warning w-100">
+                                    <i class="fas fa-key"></i> Public Keys
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>1,247</h4>
+                                <p class="mb-0">Today's Entries</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-sign-in-alt fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>1,245</h4>
+                                <p class="mb-0">Valid Documents</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>2</h4>
+                                <p class="mb-0">Suspicious Cases</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-exclamation-triangle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>0</h4>
+                                <p class="mb-0">Denied Entries</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-ban fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-shield-alt"></i> Security Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="bg-success rounded-circle p-3 d-inline-block mb-3">
+                                        <i class="fas fa-server fa-2x text-white"></i>
+                                    </div>
+                                    <h6>System Status</h6>
+                                    <span class="badge bg-success">Operational</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="bg-success rounded-circle p-3 d-inline-block mb-3">
+                                        <i class="fas fa-key fa-2x text-white"></i>
+                                    </div>
+                                    <h6>Public Key Registry</h6>
+                                    <span class="badge bg-success">Updated</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="bg-success rounded-circle p-3 d-inline-block mb-3">
+                                        <i class="fas fa-network-wired fa-2x text-white"></i>
+                                    </div>
+                                    <h6>Network Status</h6>
+                                    <span class="badge bg-success">Connected</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="bg-success rounded-circle p-3 d-inline-block mb-3">
+                                        <i class="fas fa-database fa-2x text-white"></i>
+                                    </div>
+                                    <h6>Database</h6>
+                                    <span class="badge bg-success">Online</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-history"></i> Recent Verifications</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Document Type</th>
+                                        <th>Traveler</th>
+                                        <th>Status</th>
+                                        <th>Officer</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>16:30:15</td>
+                                        <td><i class="fas fa-passport text-primary"></i> Passport</td>
+                                        <td>John Doe (CIT-001-2024)</td>
+                                        <td><span class="badge bg-success">Verified</span></td>
+                                        <td>Officer Smith</td>
+                                    </tr>
+                                    <tr>
+                                        <td>16:28:42</td>
+                                        <td><i class="fas fa-stamp text-success"></i> Visa</td>
+                                        <td>Jane Smith (TRAV-002-2024)</td>
+                                        <td><span class="badge bg-success">Verified</span></td>
+                                        <td>Officer Johnson</td>
+                                    </tr>
+                                    <tr>
+                                        <td>16:25:18</td>
+                                        <td><i class="fas fa-qrcode text-info"></i> QR Code</td>
+                                        <td>Bob Wilson (CIT-003-2024)</td>
+                                        <td><span class="badge bg-success">Verified</span></td>
+                                        <td>Officer Brown</td>
+                                    </tr>
+                                    <tr>
+                                        <td>16:22:05</td>
+                                        <td><i class="fas fa-passport text-primary"></i> Passport</td>
+                                        <td>Alice Davis (CIT-004-2024)</td>
+                                        <td><span class="badge bg-warning">Pending Review</span></td>
+                                        <td>Officer Wilson</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Active Alerts</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning alert-sm">
+                            <i class="fas fa-clock"></i>
+                            <strong>Document Expiry:</strong> 3 passports expiring within 30 days
+                        </div>
+                        <div class="alert alert-info alert-sm">
+                            <i class="fas fa-sync"></i>
+                            <strong>Key Update:</strong> New public keys available for 2 countries
+                        </div>
+                        <div class="alert alert-success alert-sm">
+                            <i class="fas fa-check"></i>
+                            <strong>System:</strong> All verification services operational
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-bar"></i> Today's Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h6>Passports</h6>
+                                <h4 class="text-primary">892</h4>
+                            </div>
+                            <div class="col-6">
+                                <h6>Visas</h6>
+                                <h4 class="text-success">355</h4>
+                            </div>
+                        </div>
+                        <div class="row text-center mt-3">
+                            <div class="col-6">
+                                <h6>QR Scans</h6>
+                                <h4 class="text-info">156</h4>
+                            </div>
+                            <div class="col-6">
+                                <h6>Avg. Time</h6>
+                                <h4 class="text-warning">2.3s</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-refresh dashboard every 30 seconds
+        setInterval(function() {
+            // This would refresh the dashboard data
+            console.log('Refreshing dashboard data...');
+        }, 30000);
+        
+        // Real-time alerts
+        function checkForAlerts() {
+            // This would check for new security alerts
+            console.log('Checking for new alerts...');
+        }
+        
+        // Check for alerts every 60 seconds
+        setInterval(checkForAlerts, 60000);
+    </script>
+</body>
+</html> 

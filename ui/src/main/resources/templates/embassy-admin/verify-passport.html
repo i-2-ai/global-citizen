@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Passport - Global Citizen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-building"></i> Global Citizen - Embassy Admin
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/embassy-admin">Dashboard</a>
+                <a class="nav-link" href="/embassy-admin/visa/issue">Issue Visa</a>
+                <a class="nav-link" href="/embassy-admin/visa/search">Search Visa</a>
+                <a class="nav-link" href="/embassy-admin/visas">All Visas</a>
+                <a class="nav-link active" href="/embassy-admin/passport/verify">Verify Passport</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-passport"></i> Verify Digital Passport</h4>
+                        <p class="text-muted mb-0">Verify passport authenticity using JWT token or QR code</p>
+                    </div>
+                    <div class="card-body">
+                        <!-- Verification Methods -->
+                        <ul class="nav nav-tabs mb-4" id="verificationTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="jwt-tab" data-bs-toggle="tab" data-bs-target="#jwt" type="button" role="tab">
+                                    <i class="fas fa-key"></i> JWT Token
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="qr-tab" data-bs-toggle="tab" data-bs-target="#qr" type="button" role="tab">
+                                    <i class="fas fa-qrcode"></i> QR Code
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual" type="button" role="tab">
+                                    <i class="fas fa-search"></i> Manual Search
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="verificationTabContent">
+                            <!-- JWT Token Verification -->
+                            <div class="tab-pane fade show active" id="jwt" role="tabpanel">
+                                <form th:action="@{/embassy-admin/passport/verify}" method="post">
+                                    <div class="mb-3">
+                                        <label for="jwtToken" class="form-label">JWT Token *</label>
+                                        <textarea class="form-control" id="jwtToken" name="jwtToken" rows="4" 
+                                                  placeholder="Paste the JWT token here..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-check-circle"></i> Verify Passport
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- QR Code Verification -->
+                            <div class="tab-pane fade" id="qr" role="tabpanel">
+                                <div class="text-center">
+                                    <div class="mb-3">
+                                        <label class="form-label">Scan QR Code</label>
+                                        <div class="border-2 border-dashed border-secondary rounded p-4">
+                                            <i class="fas fa-camera fa-3x text-muted mb-3"></i>
+                                            <p class="text-muted">QR code scanner would be integrated here</p>
+                                            <button class="btn btn-outline-primary">
+                                                <i class="fas fa-camera"></i> Open Scanner
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="qrCodeData" class="form-label">Or Paste QR Code Data</label>
+                                        <textarea class="form-control" id="qrCodeData" rows="3" 
+                                                  placeholder="Paste QR code data here..."></textarea>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" onclick="verifyQrCode()">
+                                        <i class="fas fa-check-circle"></i> Verify QR Code
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Manual Search -->
+                            <div class="tab-pane fade" id="manual" role="tabpanel">
+                                <form>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="citizenId" class="form-label">Citizen ID</label>
+                                                <input type="text" class="form-control" id="citizenId" 
+                                                       placeholder="Enter Citizen ID">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="passportNumber" class="form-label">Passport Number</label>
+                                                <input type="text" class="form-control" id="passportNumber" 
+                                                       placeholder="Enter Passport Number">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="firstName" class="form-label">First Name</label>
+                                                <input type="text" class="form-control" id="firstName" 
+                                                       placeholder="Enter First Name">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="lastName" class="form-label">Last Name</label>
+                                                <input type="text" class="form-control" id="lastName" 
+                                                       placeholder="Enter Last Name">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" onclick="searchPassport()">
+                                        <i class="fas fa-search"></i> Search Passport
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Alert Messages -->
+                        <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Success!</strong> <span th:text="${message}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Error!</strong> <span th:text="${error}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <!-- Verification Results -->
+                        <div th:if="${passport}" class="mt-4">
+                            <h5><i class="fas fa-passport"></i> Passport Verification Results</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6><i class="fas fa-user"></i> Passport Information</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Citizen ID:</strong></div>
+                                                <div class="col-sm-8" th:text="${passport.citizenId}">CIT-001-2024</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Passport #:</strong></div>
+                                                <div class="col-sm-8" th:text="${passport.passportNumber}">P123456789</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Name:</strong></div>
+                                                <div class="col-sm-8" th:text="${passport.firstName + ' ' + passport.lastName}">John Doe</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>DOB:</strong></div>
+                                                <div class="col-sm-8" th:text="${passport.dateOfBirth}">1990-01-01</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Nationality:</strong></div>
+                                                <div class="col-sm-8" th:text="${passport.nationality}">American</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Country:</strong></div>
+                                                <div class="col-sm-8" th:text="${passport.countryCode}">US</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6><i class="fas fa-info-circle"></i> Verification Details</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Issue Date:</strong></div>
+                                                <div class="col-sm-8" th:text="${passport.dateOfIssue}">2024-01-15</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Authority:</strong></div>
+                                                <div class="col-sm-8" th:text="${passport.authority}">Department of State</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Status:</strong></div>
+                                                <div class="col-sm-8">
+                                                    <span class="badge bg-success">Valid</span>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Verification:</strong></div>
+                                                <div class="col-sm-8">
+                                                    <span class="badge bg-success">Verified</span>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Signature:</strong></div>
+                                                <div class="col-sm-8">
+                                                    <span class="badge bg-success">Valid</span>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Expiry:</strong></div>
+                                                <div class="col-sm-8">
+                                                    <span class="badge bg-success">Not Expired</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Verification Summary -->
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-check-circle fa-2x me-3"></i>
+                                                <div>
+                                                    <h6 class="mb-1">Passport Verification Successful</h6>
+                                                    <p class="mb-0">This passport has been verified as authentic and valid. The digital signature is confirmed and the document is not expired.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <a href="/embassy-admin" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                                </a>
+                                <div>
+                                    <button class="btn btn-primary me-2" onclick="printVerification()">
+                                        <i class="fas fa-print"></i> Print Verification
+                                    </button>
+                                    <a href="/embassy-admin/visa/issue" class="btn btn-success">
+                                        <i class="fas fa-stamp"></i> Issue Visa
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function verifyQrCode() {
+            const qrData = document.getElementById('qrCodeData').value;
+            if (!qrData) {
+                alert('Please enter QR code data');
+                return;
+            }
+            // This would call the QR verification endpoint
+            alert('QR code verification would be performed here');
+        }
+        
+        function searchPassport() {
+            const citizenId = document.getElementById('citizenId').value;
+            const passportNumber = document.getElementById('passportNumber').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            
+            if (!citizenId && !passportNumber && !firstName && !lastName) {
+                alert('Please enter at least one search criteria');
+                return;
+            }
+            
+            // This would call the manual search endpoint
+            alert('Manual passport search would be performed here');
+        }
+        
+        function printVerification() {
+            window.print();
+        }
+    </script>
+</body>
+</html> 

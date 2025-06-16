@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner - Global Citizen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shield-alt"></i> Global Citizen - Immigration Control
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/immigration">Dashboard</a>
+                <a class="nav-link" href="/immigration/verify/passport">Verify Passport</a>
+                <a class="nav-link" href="/immigration/verify/visa">Verify Visa</a>
+                <a class="nav-link active" href="/immigration/verify/qr">QR Scanner</a>
+                <a class="nav-link" href="/immigration/public-keys">Public Keys</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-qrcode"></i> QR Code Scanner</h4>
+                        <p class="text-muted mb-0">Scan QR codes to verify passports and visas instantly</p>
+                    </div>
+                    <div class="card-body">
+                        <!-- Scanner Interface -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <h5><i class="fas fa-camera"></i> QR Code Scanner</h5>
+                                    <div class="border-2 border-dashed border-secondary rounded p-4 mb-3">
+                                        <div id="scanner-container" class="bg-light rounded">
+                                            <i class="fas fa-camera fa-4x text-muted mb-3"></i>
+                                            <p class="text-muted">Camera scanner would be integrated here</p>
+                                            <button class="btn btn-primary" onclick="startScanner()">
+                                                <i class="fas fa-play"></i> Start Scanner
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <button class="btn btn-outline-secondary me-2" onclick="stopScanner()">
+                                            <i class="fas fa-stop"></i> Stop Scanner
+                                        </button>
+                                        <button class="btn btn-outline-secondary" onclick="switchCamera()">
+                                            <i class="fas fa-sync"></i> Switch Camera
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Position the QR code within the scanner frame</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-keyboard"></i> Manual Input</h5>
+                                <form th:action="@{/immigration/verify/qr}" method="post">
+                                    <div class="mb-3">
+                                        <label for="qrCodeData" class="form-label">QR Code Data</label>
+                                        <textarea class="form-control" id="qrCodeData" name="qrCodeData" rows="4" 
+                                                  placeholder="Paste QR code data here or scan above..."></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-check-circle"></i> Verify QR Code
+                                    </button>
+                                </form>
+                                
+                                <hr class="my-4">
+                                
+                                <h6><i class="fas fa-info-circle"></i> Scanner Status</h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <strong>Camera:</strong><br>
+                                        <span class="badge bg-success">Connected</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>Scanner:</strong><br>
+                                        <span class="badge bg-warning">Ready</span>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-6">
+                                        <strong>Resolution:</strong><br>
+                                        <small>1920x1080</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>FPS:</strong><br>
+                                        <small>30</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Alert Messages -->
+                        <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Success!</strong> <span th:text="${message}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Error!</strong> <span th:text="${error}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <!-- Verification Results -->
+                        <div th:if="${verificationResult}" class="mt-4">
+                            <h5><i class="fas fa-check-circle"></i> QR Code Verification Results</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6><i class="fas fa-info-circle"></i> Document Information</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Document Type:</strong></div>
+                                                <div class="col-sm-8">
+                                                    <span class="badge bg-primary" th:text="${verificationResult.documentType}">Passport</span>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Document ID:</strong></div>
+                                                <div class="col-sm-8" th:text="${verificationResult.documentId}">CIT-001-2024</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Name:</strong></div>
+                                                <div class="col-sm-8" th:text="${verificationResult.fullName}">John Doe</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Nationality:</strong></div>
+                                                <div class="col-sm-8" th:text="${verificationResult.nationality}">American</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Issue Date:</strong></div>
+                                                <div class="col-sm-8" th:text="${verificationResult.issueDate}">2024-01-15</div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Expiry Date:</strong></div>
+                                                <div class="col-sm-8" th:text="${verificationResult.expiryDate}">2034-01-15</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6><i class="fas fa-shield-alt"></i> Verification Status</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>QR Code:</strong></div>
+                                                <div class="col-sm-8">
+                                                    <span class="badge bg-success">Valid</span>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Digital Signature:</strong></div>
+                                                <div class="col-sm-8">
+                                                    <span class="badge bg-success">Verified</span>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Document Status:</strong></div>
+                                                <div class="col-sm-8">
+                                                    <span class="badge bg-success">Active</span>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Expiry Check:</strong></div>
+                                                <div class="col-sm-8">
+                                                    <span class="badge bg-success">Not Expired</span>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Watchlist:</strong></div>
+                                                <div class="col-sm-8">
+                                                    <span class="badge bg-success">Clear</span>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-sm-4"><strong>Verification Time:</strong></div>
+                                                <div class="col-sm-8" th:text="${verificationResult.verificationTime}">1.2 seconds</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional Details -->
+                            <div th:if="${verificationResult.additionalDetails}" class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6><i class="fas fa-list"></i> Additional Details</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <strong>Issuing Authority:</strong><br>
+                                                    <span th:text="${verificationResult.issuingAuthority}">Department of State</span>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <strong>Document Number:</strong><br>
+                                                    <span th:text="${verificationResult.documentNumber}">P123456789</span>
+                                                </div>
+                                            </div>
+                                            <div th:if="${verificationResult.purpose}" class="row mt-3">
+                                                <div class="col-12">
+                                                    <strong>Purpose:</strong><br>
+                                                    <span th:text="${verificationResult.purpose}">Tourism</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Verification Summary -->
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-check-circle fa-2x me-3"></i>
+                                                <div>
+                                                    <h6 class="mb-1">QR Code Verification Successful</h6>
+                                                    <p class="mb-0">The QR code has been successfully verified. The document is authentic and valid for entry.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <a href="/immigration" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                                </a>
+                                <div>
+                                    <button class="btn btn-primary me-2" onclick="printVerification()">
+                                        <i class="fas fa-print"></i> Print Verification
+                                    </button>
+                                    <button class="btn btn-info me-2" onclick="recordEntry()">
+                                        <i class="fas fa-sign-in-alt"></i> Record Entry
+                                    </button>
+                                    <button class="btn btn-success" onclick="scanAnother()">
+                                        <i class="fas fa-qrcode"></i> Scan Another
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let scannerActive = false;
+        
+        function startScanner() {
+            scannerActive = true;
+            document.getElementById('scanner-container').innerHTML = `
+                <div class="bg-dark rounded p-3">
+                    <div class="text-center text-white">
+                        <i class="fas fa-camera fa-2x mb-2"></i>
+                        <p>Scanner Active</p>
+                        <div class="scanner-frame border border-success rounded" style="width: 200px; height: 200px; margin: 0 auto;">
+                            <div class="scanner-line bg-success" style="height: 2px; width: 100%; animation: scan 2s linear infinite;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Simulate QR code detection
+            setTimeout(() => {
+                if (scannerActive) {
+                    simulateQrDetection();
+                }
+            }, 3000);
+        }
+        
+        function stopScanner() {
+            scannerActive = false;
+            document.getElementById('scanner-container').innerHTML = `
+                <i class="fas fa-camera fa-4x text-muted mb-3"></i>
+                <p class="text-muted">Camera scanner would be integrated here</p>
+                <button class="btn btn-primary" onclick="startScanner()">
+                    <i class="fas fa-play"></i> Start Scanner
+                </button>
+            `;
+        }
+        
+        function switchCamera() {
+            alert('Switching to front/back camera...');
+        }
+        
+        function simulateQrDetection() {
+            if (scannerActive) {
+                const qrData = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaXRpemVuSWQiOiJDSVQtMDAxLTIwMjQiLCJwYXNzcG9ydE51bWJlciI6IlAxMjM0NTY3ODkiLCJmaXJzdE5hbWUiOiJKb2huIiwibGFzdE5hbWUiOiJEb2UiLCJkYXRlT2ZCaXJ0aCI6IjE5OTAtMDEtMDEiLCJuYXRpb25hbGl0eSI6IkFtZXJpY2FuIiwiY291bnRyeUNvZGUiOiJVUyIsImRhdGVPZklzc3VlIjoiMjAyNC0wMS0xNSIsImF1dGhvcml0eSI6IkRlcGFydG1lbnQgb2YgU3RhdGUiLCJpYXQiOjE3MDUzNzI5NzQsImV4cCI6MTczNjkxMjk3NH0.example";
+                document.getElementById('qrCodeData').value = qrData;
+                alert('QR code detected! Data has been loaded into the form.');
+            }
+        }
+        
+        function printVerification() {
+            window.print();
+        }
+        
+        function recordEntry() {
+            if (confirm('Record this person\'s entry into the country?')) {
+                alert('Entry has been recorded successfully.');
+            }
+        }
+        
+        function scanAnother() {
+            document.getElementById('qrCodeData').value = '';
+            // Clear any previous results
+            location.reload();
+        }
+        
+        // Add CSS for scanner animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes scan {
+                0% { transform: translateY(0); }
+                50% { transform: translateY(200px); }
+                100% { transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html> 

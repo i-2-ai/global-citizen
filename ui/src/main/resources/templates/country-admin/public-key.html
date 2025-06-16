@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Key - Global Citizen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-flag"></i> Global Citizen - Country Admin
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/country-admin">Dashboard</a>
+                <a class="nav-link" href="/country-admin/passport/issue">Issue Passport</a>
+                <a class="nav-link" href="/country-admin/passport/search">Search Passport</a>
+                <a class="nav-link" href="/country-admin/passports">All Passports</a>
+                <a class="nav-link active" href="/country-admin/public-key">Public Key</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-key"></i> Country Public Key</h4>
+                        <p class="text-muted mb-0">This public key is used by immigration authorities to verify passports issued by this country</p>
+                    </div>
+                    <div class="card-body">
+                        <!-- Key Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <h5><i class="fas fa-info-circle"></i> Key Information</h5>
+                                <div class="row mb-3">
+                                    <div class="col-sm-3"><strong>Algorithm:</strong></div>
+                                    <div class="col-sm-9">CRYSTALS-Dilithium (Quantum-Resistant)</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-3"><strong>Key Size:</strong></div>
+                                    <div class="col-sm-9">2,592 bytes</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-3"><strong>Status:</strong></div>
+                                    <div class="col-sm-9">
+                                        <span class="badge bg-success">Active</span>
+                                        <small class="text-muted ms-2">Published and trusted</small>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-3"><strong>Last Updated:</strong></div>
+                                    <div class="col-sm-9">2024-01-15 10:30:00 UTC</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <div class="bg-success rounded-circle p-3 d-inline-block mb-3">
+                                        <i class="fas fa-shield-alt fa-2x text-white"></i>
+                                    </div>
+                                    <h6>Key Status</h6>
+                                    <p class="text-muted">Securely stored and cryptographically signed by the Central Authority</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Public Key Display -->
+                        <div class="mb-4">
+                            <h5><i class="fas fa-code"></i> Public Key (Base64 Encoded)</h5>
+                            <div class="input-group">
+                                <textarea class="form-control" rows="6" readonly th:text="${publicKey.publicKeyBase64}">Loading public key...</textarea>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this)">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <small class="text-muted">This key is used to verify the digital signatures on passports issued by this country</small>
+                        </div>
+                        
+                        <!-- Key Fingerprint -->
+                        <div class="mb-4">
+                            <h5><i class="fas fa-fingerprint"></i> Key Fingerprint</h5>
+                            <div class="input-group">
+                                <input type="text" class="form-control" th:value="${publicKey.keyFingerprint}" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this)">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <small class="text-muted">SHA-256 fingerprint for key verification</small>
+                        </div>
+                        
+                        <!-- Verification Endpoint -->
+                        <div class="mb-4">
+                            <h5><i class="fas fa-link"></i> Verification Endpoint</h5>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="https://country.globalcitizen.com/api/public-key" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this)">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <small class="text-muted">Immigration authorities use this endpoint to fetch the current public key</small>
+                        </div>
+                        
+                        <!-- Security Information -->
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6><i class="fas fa-shield-alt"></i> Security Information</h6>
+                                <ul class="mb-0">
+                                    <li>This public key is cryptographically signed by the Central Authority</li>
+                                    <li>The key uses quantum-resistant CRYSTALS-Dilithium algorithm</li>
+                                    <li>Key rotation is managed automatically by the Central Authority</li>
+                                    <li>All passport signatures are verified using this public key</li>
+                                    <li>The key is published and accessible to all immigration authorities</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="/country-admin" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                            <div>
+                                <button class="btn btn-primary me-2" onclick="downloadPublicKey()">
+                                    <i class="fas fa-download"></i> Download Key
+                                </button>
+                                <button class="btn btn-info" onclick="testVerification()">
+                                    <i class="fas fa-check-circle"></i> Test Verification
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToClipboard(button) {
+            const input = button.parentElement.querySelector('input, textarea');
+            input.select();
+            document.execCommand('copy');
+            
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.remove('btn-outline-secondary');
+            button.classList.add('btn-success');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }, 2000);
+        }
+        
+        function downloadPublicKey() {
+            const publicKey = document.querySelector('textarea').value;
+            const blob = new Blob([publicKey], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'country-public-key.txt';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        function testVerification() {
+            alert('Verification test would be performed here. This would validate that the public key can properly verify passport signatures.');
+        }
+    </script>
+</body>
+</html> 

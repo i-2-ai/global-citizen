@@ -1,0 +1,267 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres-central:
+    image: postgres:15-alpine
+    container_name: global-citizen-postgres-central
+    environment:
+      POSTGRES_DB: global_citizen_central
+      POSTGRES_USER: globalcitizen
+      POSTGRES_PASSWORD: secure_password_123
+    volumes:
+      - postgres_central_data:/var/lib/postgresql/data
+      - ./init-scripts/central-authority.sql:/docker-entrypoint-initdb.d/01-central-authority.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - global-citizen-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U globalcitizen -d global_citizen_central"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-country:
+    image: postgres:15-alpine
+    container_name: global-citizen-postgres-country
+    environment:
+      POSTGRES_DB: global_citizen_country
+      POSTGRES_USER: globalcitizen
+      POSTGRES_PASSWORD: secure_password_123
+    volumes:
+      - postgres_country_data:/var/lib/postgresql/data
+      - ./init-scripts/country-service.sql:/docker-entrypoint-initdb.d/01-country-service.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - global-citizen-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U globalcitizen -d global_citizen_country"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-embassy:
+    image: postgres:15-alpine
+    container_name: global-citizen-postgres-embassy
+    environment:
+      POSTGRES_DB: global_citizen_embassy
+      POSTGRES_USER: globalcitizen
+      POSTGRES_PASSWORD: secure_password_123
+    volumes:
+      - postgres_embassy_data:/var/lib/postgresql/data
+      - ./init-scripts/embassy-service.sql:/docker-entrypoint-initdb.d/01-embassy-service.sql
+    ports:
+      - "5434:5432"
+    networks:
+      - global-citizen-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U globalcitizen -d global_citizen_embassy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: global-citizen-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - global-citizen-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Central Authority Service
+  central-authority:
+    build:
+      context: ./central-authority
+      dockerfile: Dockerfile
+    container_name: global-citizen-central-authority
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-central:5432/global_citizen_central
+      SPRING_DATASOURCE_USERNAME: globalcitizen
+      SPRING_DATASOURCE_PASSWORD: secure_password_123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - central_authority_keys:/app/keys
+    depends_on:
+      postgres-central:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - global-citizen-network
+    restart: unless-stopped
+
+  # Country Service
+  country-service:
+    build:
+      context: ./country-service
+      dockerfile: Dockerfile
+    container_name: global-citizen-country-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-country:5432/global_citizen_country
+      SPRING_DATASOURCE_USERNAME: globalcitizen
+      SPRING_DATASOURCE_PASSWORD: secure_password_123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      CENTRAL_AUTHORITY_URL: http://central-authority:8080
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    volumes:
+      - country_service_passports:/app/passports
+    depends_on:
+      postgres-country:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      central-authority:
+        condition: service_started
+    networks:
+      - global-citizen-network
+    restart: unless-stopped
+
+  # Embassy Service
+  embassy-service:
+    build:
+      context: ./embassy-service
+      dockerfile: Dockerfile
+    container_name: global-citizen-embassy-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-embassy:5432/global_citizen_embassy
+      SPRING_DATASOURCE_USERNAME: globalcitizen
+      SPRING_DATASOURCE_PASSWORD: secure_password_123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      CENTRAL_AUTHORITY_URL: http://central-authority:8080
+      SERVER_PORT: 8082
+    ports:
+      - "8082:8082"
+    volumes:
+      - embassy_service_visas:/app/visas
+    depends_on:
+      postgres-embassy:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      central-authority:
+        condition: service_started
+    networks:
+      - global-citizen-network
+    restart: unless-stopped
+
+  # Immigration Service
+  immigration-service:
+    build:
+      context: ./immigration-service
+      dockerfile: Dockerfile
+    container_name: global-citizen-immigration-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      COUNTRY_SERVICE_URL: http://country-service:8081
+      EMBASSY_SERVICE_URL: http://embassy-service:8082
+      SERVER_PORT: 8083
+    ports:
+      - "8083:8083"
+    volumes:
+      - immigration_service_logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+      country-service:
+        condition: service_started
+      embassy-service:
+        condition: service_started
+    networks:
+      - global-citizen-network
+    restart: unless-stopped
+
+  # UI Service
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: global-citizen-ui
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CENTRAL_AUTHORITY_URL: http://central-authority:8080
+      COUNTRY_SERVICE_URL: http://country-service:8081
+      EMBASSY_SERVICE_URL: http://embassy-service:8082
+      IMMIGRATION_SERVICE_URL: http://immigration-service:8083
+      SERVER_PORT: 8084
+    ports:
+      - "8084:8084"
+    depends_on:
+      central-authority:
+        condition: service_started
+      country-service:
+        condition: service_started
+      embassy-service:
+        condition: service_started
+      immigration-service:
+        condition: service_started
+    networks:
+      - global-citizen-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: global-citizen-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - ui
+      - central-authority
+      - country-service
+      - embassy-service
+      - immigration-service
+    networks:
+      - global-citizen-network
+    restart: unless-stopped
+
+volumes:
+  postgres_central_data:
+    driver: local
+  postgres_country_data:
+    driver: local
+  postgres_embassy_data:
+    driver: local
+  redis_data:
+    driver: local
+  central_authority_keys:
+    driver: local
+  country_service_passports:
+    driver: local
+  embassy_service_visas:
+    driver: local
+  immigration_service_logs:
+    driver: local
+
+networks:
+  global-citizen-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

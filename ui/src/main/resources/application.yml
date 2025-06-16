@@ -1,0 +1,45 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: global-citizen-ui
+  
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+    mode: HTML
+  
+  webflux:
+    base-url: http://localhost:8080
+
+# API Endpoints Configuration
+api:
+  central-authority:
+    url: http://localhost:8081
+  country-service:
+    url: http://localhost:8082
+  embassy-service:
+    url: http://localhost:8083
+  immigration-service:
+    url: http://localhost:8084
+
+# Logging Configuration
+logging:
+  level:
+    com.globalcitizen: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always 

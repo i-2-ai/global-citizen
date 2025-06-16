@@ -1,0 +1,314 @@
+version: '3.8'
+
+services:
+  # Development Database Services
+  postgres-central:
+    image: postgres:15-alpine
+    container_name: global-citizen-postgres-central-dev
+    environment:
+      POSTGRES_DB: global_citizen_central
+      POSTGRES_USER: globalcitizen
+      POSTGRES_PASSWORD: dev_password_123
+    volumes:
+      - postgres_central_data_dev:/var/lib/postgresql/data
+      - ./init-scripts/central-authority.sql:/docker-entrypoint-initdb.d/01-central-authority.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - global-citizen-network-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U globalcitizen -d global_citizen_central"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-country:
+    image: postgres:15-alpine
+    container_name: global-citizen-postgres-country-dev
+    environment:
+      POSTGRES_DB: global_citizen_country
+      POSTGRES_USER: globalcitizen
+      POSTGRES_PASSWORD: dev_password_123
+    volumes:
+      - postgres_country_data_dev:/var/lib/postgresql/data
+      - ./init-scripts/country-service.sql:/docker-entrypoint-initdb.d/01-country-service.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - global-citizen-network-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U globalcitizen -d global_citizen_country"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-embassy:
+    image: postgres:15-alpine
+    container_name: global-citizen-postgres-embassy-dev
+    environment:
+      POSTGRES_DB: global_citizen_embassy
+      POSTGRES_USER: globalcitizen
+      POSTGRES_PASSWORD: dev_password_123
+    volumes:
+      - postgres_embassy_data_dev:/var/lib/postgresql/data
+      - ./init-scripts/embassy-service.sql:/docker-entrypoint-initdb.d/01-embassy-service.sql
+    ports:
+      - "5434:5432"
+    networks:
+      - global-citizen-network-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U globalcitizen -d global_citizen_embassy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: global-citizen-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - global-citizen-network-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Central Authority Service (Development)
+  central-authority:
+    build:
+      context: ./central-authority
+      dockerfile: Dockerfile
+    container_name: global-citizen-central-authority-dev
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-central:5432/global_citizen_central
+      SPRING_DATASOURCE_USERNAME: globalcitizen
+      SPRING_DATASOURCE_PASSWORD: dev_password_123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SERVER_PORT: 8080
+      # Development specific settings
+      LOGGING_LEVEL_ROOT: DEBUG
+      LOGGING_LEVEL_COM_GLOBALCITIZEN: DEBUG
+    ports:
+      - "8080:8080"
+    volumes:
+      - central_authority_keys_dev:/app/keys
+      - ./central-authority/logs:/app/logs
+    depends_on:
+      postgres-central:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - global-citizen-network-dev
+    restart: unless-stopped
+
+  # Country Service (Development)
+  country-service:
+    build:
+      context: ./country-service
+      dockerfile: Dockerfile
+    container_name: global-citizen-country-service-dev
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-country:5432/global_citizen_country
+      SPRING_DATASOURCE_USERNAME: globalcitizen
+      SPRING_DATASOURCE_PASSWORD: dev_password_123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      CENTRAL_AUTHORITY_URL: http://central-authority:8080
+      SERVER_PORT: 8081
+      # Development specific settings
+      LOGGING_LEVEL_ROOT: DEBUG
+      LOGGING_LEVEL_COM_GLOBALCITIZEN: DEBUG
+    ports:
+      - "8081:8081"
+    volumes:
+      - country_service_passports_dev:/app/passports
+      - ./country-service/logs:/app/logs
+    depends_on:
+      postgres-country:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      central-authority:
+        condition: service_started
+    networks:
+      - global-citizen-network-dev
+    restart: unless-stopped
+
+  # Embassy Service (Development)
+  embassy-service:
+    build:
+      context: ./embassy-service
+      dockerfile: Dockerfile
+    container_name: global-citizen-embassy-service-dev
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-embassy:5432/global_citizen_embassy
+      SPRING_DATASOURCE_USERNAME: globalcitizen
+      SPRING_DATASOURCE_PASSWORD: dev_password_123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      CENTRAL_AUTHORITY_URL: http://central-authority:8080
+      SERVER_PORT: 8082
+      # Development specific settings
+      LOGGING_LEVEL_ROOT: DEBUG
+      LOGGING_LEVEL_COM_GLOBALCITIZEN: DEBUG
+    ports:
+      - "8082:8082"
+    volumes:
+      - embassy_service_visas_dev:/app/visas
+      - ./embassy-service/logs:/app/logs
+    depends_on:
+      postgres-embassy:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      central-authority:
+        condition: service_started
+    networks:
+      - global-citizen-network-dev
+    restart: unless-stopped
+
+  # Immigration Service (Development)
+  immigration-service:
+    build:
+      context: ./immigration-service
+      dockerfile: Dockerfile
+    container_name: global-citizen-immigration-service-dev
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      COUNTRY_SERVICE_URL: http://country-service:8081
+      EMBASSY_SERVICE_URL: http://embassy-service:8082
+      SERVER_PORT: 8083
+      # Development specific settings
+      LOGGING_LEVEL_ROOT: DEBUG
+      LOGGING_LEVEL_COM_GLOBALCITIZEN: DEBUG
+    ports:
+      - "8083:8083"
+    volumes:
+      - immigration_service_logs_dev:/app/logs
+      - ./immigration-service/logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+      country-service:
+        condition: service_started
+      embassy-service:
+        condition: service_started
+    networks:
+      - global-citizen-network-dev
+    restart: unless-stopped
+
+  # UI Service (Development)
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: global-citizen-ui-dev
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      CENTRAL_AUTHORITY_URL: http://central-authority:8080
+      COUNTRY_SERVICE_URL: http://country-service:8081
+      EMBASSY_SERVICE_URL: http://embassy-service:8082
+      IMMIGRATION_SERVICE_URL: http://immigration-service:8083
+      SERVER_PORT: 8084
+      # Development specific settings
+      LOGGING_LEVEL_ROOT: DEBUG
+      LOGGING_LEVEL_COM_GLOBALCITIZEN: DEBUG
+    ports:
+      - "8084:8084"
+    volumes:
+      - ./ui/logs:/app/logs
+    depends_on:
+      central-authority:
+        condition: service_started
+      country-service:
+        condition: service_started
+      embassy-service:
+        condition: service_started
+      immigration-service:
+        condition: service_started
+    networks:
+      - global-citizen-network-dev
+    restart: unless-stopped
+
+  # Development Tools
+  # pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: global-citizen-pgadmin-dev
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@globalcitizen.dev
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data_dev:/var/lib/pgadmin
+    networks:
+      - global-citizen-network-dev
+    depends_on:
+      - postgres-central
+      - postgres-country
+      - postgres-embassy
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: global-citizen-redis-commander-dev
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - global-citizen-network-dev
+    depends_on:
+      - redis
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: global-citizen-jaeger-dev
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    networks:
+      - global-citizen-network-dev
+
+volumes:
+  postgres_central_data_dev:
+    driver: local
+  postgres_country_data_dev:
+    driver: local
+  postgres_embassy_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local
+  central_authority_keys_dev:
+    driver: local
+  country_service_passports_dev:
+    driver: local
+  embassy_service_visas_dev:
+    driver: local
+  immigration_service_logs_dev:
+    driver: local
+  pgadmin_data_dev:
+    driver: local
+
+networks:
+  global-citizen-network-dev:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16 

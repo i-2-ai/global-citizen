@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embassy Admin Dashboard - Global Citizen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-building"></i> Global Citizen - Embassy Admin
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/embassy-admin">Dashboard</a>
+                <a class="nav-link" href="/embassy-admin/visa/issue">Issue Visa</a>
+                <a class="nav-link" href="/embassy-admin/visa/search">Search Visa</a>
+                <a class="nav-link" href="/embassy-admin/visas">All Visas</a>
+                <a class="nav-link" href="/embassy-admin/passport/verify">Verify Passport</a>
+                <a class="nav-link" href="/embassy-admin/public-key">Public Key</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="fas fa-building"></i> Embassy Administration Dashboard
+                </h1>
+                
+                <!-- Alert Messages -->
+                <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i>
+                    <span th:text="${message}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <a href="/embassy-admin/visa/issue" class="btn btn-primary w-100">
+                                    <i class="fas fa-plus"></i> Issue Visa
+                                </a>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <a href="/embassy-admin/visa/search" class="btn btn-info w-100">
+                                    <i class="fas fa-search"></i> Search Visa
+                                </a>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <a href="/embassy-admin/visas" class="btn btn-secondary w-100">
+                                    <i class="fas fa-list"></i> All Visas
+                                </a>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <a href="/embassy-admin/passport/verify" class="btn btn-warning w-100">
+                                    <i class="fas fa-passport"></i> Verify Passport
+                                </a>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <a href="/embassy-admin/public-key" class="btn btn-success w-100">
+                                    <i class="fas fa-key"></i> Public Key
+                                </a>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <a href="/embassy-admin/visa/issue?type=emergency" class="btn btn-danger w-100">
+                                    <i class="fas fa-exclamation"></i> Emergency Visa
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Embassy Public Key -->
+        <div class="row mb-4" th:if="${publicKey}">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-key"></i> Embassy Public Key</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p class="text-muted">This public key is used by immigration authorities to verify visas issued by this embassy.</p>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" th:value="${publicKey.publicKeyBase64}" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(this)">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success rounded-circle p-2 me-3">
+                                        <i class="fas fa-check text-white"></i>
+                                    </div>
+                                    <div>
+                                        <strong>Key Status</strong><br>
+                                        <small class="text-muted">Active & Published</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>856</h4>
+                                <p class="mb-0">Total Visas</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-stamp fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>823</h4>
+                                <p class="mb-0">Active Visas</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>33</h4>
+                                <p class="mb-0">Expired Visas</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-clock fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>12</h4>
+                                <p class="mb-0">Today's Issued</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-calendar-day fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-history"></i> Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                        <th>Traveler ID</th>
+                                        <th>Visa Type</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2024-01-15 16:30</td>
+                                        <td><i class="fas fa-plus text-primary"></i> Visa Issued</td>
+                                        <td>TRAV-001-2024</td>
+                                        <td>Tourist</td>
+                                        <td><span class="badge bg-success">Active</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2024-01-15 14:45</td>
+                                        <td><i class="fas fa-plus text-primary"></i> Visa Issued</td>
+                                        <td>TRAV-002-2024</td>
+                                        <td>Business</td>
+                                        <td><span class="badge bg-success">Active</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2024-01-15 11:20</td>
+                                        <td><i class="fas fa-search text-info"></i> Passport Verified</td>
+                                        <td>CIT-001-2024</td>
+                                        <td>N/A</td>
+                                        <td><span class="badge bg-info">Verified</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2024-01-14 17:15</td>
+                                        <td><i class="fas fa-plus text-danger"></i> Emergency Visa</td>
+                                        <td>TRAV-003-2024</td>
+                                        <td>Emergency</td>
+                                        <td><span class="badge bg-success">Active</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToClipboard(button) {
+            const input = button.parentElement.querySelector('input');
+            input.select();
+            document.execCommand('copy');
+            
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.remove('btn-outline-secondary');
+            button.classList.add('btn-success');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }, 2000);
+        }
+    </script>
+</body>
+</html> 
